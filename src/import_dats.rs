@@ -566,6 +566,7 @@ pub async fn reimport_orphan_romfiles(
             &header,
             &Path::new(&romfile.path),
             hash_algorithm,
+            false,
         )
         .await?;
     }

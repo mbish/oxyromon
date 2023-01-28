@@ -16,7 +16,7 @@ use super::SimpleResult;
 use async_std::path::Path;
 use cfg_if::cfg_if;
 use clap::builder::PossibleValuesParser;
-use clap::{Arg, ArgMatches, Command};
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
@@ -57,6 +57,14 @@ pub fn subcommand() -> Command {
                 .num_args(1)
                 .value_parser(PossibleValuesParser::new(HashAlgorithm::VARIANTS)),
         )
+        .arg(
+            Arg::new("NOTRASH")
+                .short('n')
+                .long("no-trash")
+                .help("Do not trash unmatched files")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
 }
 
 pub async fn main(
@@ -65,6 +73,7 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let romfile_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("ROMS").unwrap().collect();
+    let no_trash = matches.get_flag("NOTRASH");
     let system = prompt_for_system(
         connection,
         matches
@@ -109,6 +118,7 @@ pub async fn main(
                                     &header,
                                     &entry.path(),
                                     &hash_algorithm,
+                                    no_trash,
                                 )
                                 .await?;
                             }
@@ -125,6 +135,7 @@ pub async fn main(
                                 &header,
                                 &entry.path(),
                                 &hash_algorithm,
+                                no_trash,
                             )
                             .await?;
                         }
@@ -139,6 +150,7 @@ pub async fn main(
                 &header,
                 &romfile_path,
                 &hash_algorithm,
+                no_trash,
             )
             .await?;
         }
@@ -167,6 +179,7 @@ pub async fn import_rom<P: AsRef<Path>>(
     header: &Option<Header>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
+    no_trash: bool,
 ) -> SimpleResult<()> {
     let mut transaction = begin_transaction(connection).await;
 
@@ -265,6 +278,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             &romfile_path,
             &romfile_extension,
             hash_algorithm,
+            no_trash,
         )
         .await?;
     }
@@ -861,6 +875,7 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
     romfile_path: &P,
     romfile_extension: &str,
     hash_algorithm: &HashAlgorithm,
+    no_trash: bool,
 ) -> SimpleResult<()> {
     let (size, hash) = get_size_and_hash(
         connection,
@@ -884,7 +899,9 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
     {
         Some(rom) => rom,
         None => {
-            move_to_trash(connection, progress_bar, system, romfile_path).await?;
+            if !no_trash {
+                move_to_trash(connection, progress_bar, system, romfile_path).await?;
+            }
             return Ok(());
         }
     };
