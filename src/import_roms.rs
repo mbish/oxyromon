@@ -99,6 +99,41 @@ pub async fn main(
         }
     };
 
+    import_system(
+        connection,
+        progress_bar,
+        &system,
+        &header,
+        &romfile_paths,
+        &hash_algorithm,
+        no_trash,
+    )
+    .await?;
+
+    // mark games and system as complete if they are
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    progress_bar.set_message("Computing system completion");
+    update_games_by_system_id_mark_complete(connection, system.id).await;
+    cfg_if! {
+        if #[cfg(feature = "ird")] {
+            update_jbfolder_games_by_system_id_mark_complete(connection, system.id).await;
+        }
+    }
+    update_system_mark_complete(connection, system.id).await;
+
+    Ok(())
+}
+
+pub async fn import_system(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
+    header: &Option<Header>,
+    romfile_paths: &Vec<&PathBuf>,
+    hash_algorithm: &HashAlgorithm,
+    no_trash: bool,
+) -> SimpleResult<()> {
     for romfile_path in romfile_paths {
         progress_bar.println(format!("Processing \"{:?}\"", &romfile_path));
         let romfile_path = get_canonicalized_path(&romfile_path).await?;
@@ -156,19 +191,6 @@ pub async fn main(
         }
         progress_bar.println("");
     }
-
-    // mark games and system as complete if they are
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
-    progress_bar.set_message("Computing system completion");
-    update_games_by_system_id_mark_complete(connection, system.id).await;
-    cfg_if! {
-        if #[cfg(feature = "ird")] {
-            update_jbfolder_games_by_system_id_mark_complete(connection, system.id).await;
-        }
-    }
-    update_system_mark_complete(connection, system.id).await;
-
     Ok(())
 }
 
