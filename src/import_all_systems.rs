@@ -50,8 +50,8 @@ pub async fn main(
     let romfile_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("ROMS").unwrap().collect();
     let no_trash = matches.get_flag("NOTRASH");
     let hash_algorithm = match matches.get_one::<String>("HASH").map(String::as_str) {
-        Some("CRC") => HashAlgorithm::Crc,
-        Some("MD5") => HashAlgorithm::Md5,
+        Some("crc") => HashAlgorithm::Crc,
+        Some("md5") => HashAlgorithm::Md5,
         Some(&_) | None => {
             match find_setting_by_key(connection, "HASH_ALGORITHM")
                 .await
@@ -59,8 +59,8 @@ pub async fn main(
                 .value
                 .as_deref()
             {
-                Some("CRC") => HashAlgorithm::Crc,
-                Some("MD5") => HashAlgorithm::Md5,
+                Some("crc") => HashAlgorithm::Crc,
+                Some("md5") => HashAlgorithm::Md5,
                 Some(&_) | None => bail!("Not possible"),
             }
         }
