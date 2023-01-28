@@ -64,7 +64,7 @@ mod import_dats;
 #[cfg(feature = "ird")]
 mod import_irds;
 mod import_roms;
-mod import_all;
+mod import_all_systems;
 #[cfg(feature = "ird")]
 mod isoinfo;
 #[cfg(feature = "cso")]
@@ -101,7 +101,7 @@ async fn main() -> SimpleResult<()> {
         import_dats::subcommand(),
         download_dats::subcommand(),
         import_roms::subcommand(),
-        import_all::subcommand(),
+        import_all_systems::subcommand(),
         sort_roms::subcommand(),
         convert_roms::subcommand(),
         rebuild_roms::subcommand(),
@@ -263,10 +263,10 @@ async fn main() -> SimpleResult<()> {
                     }
                 }
             }
-            Some("import-all") => {
-                import_all::main(
+            Some("import-all-systems") => {
+                import_all_systems::main(
                     &mut pool.acquire().await.unwrap(),
-                    matches.subcommand_matches("import-all").unwrap(),
+                    matches.subcommand_matches("import-all-systems").unwrap(),
                     &progress_bar,
                 )
                 .await?

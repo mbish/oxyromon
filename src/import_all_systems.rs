@@ -1,5 +1,4 @@
 #[cfg(feature = "chd")]
-use super::checksum::*;
 use super::config::*;
 use super::database::*;
 #[cfg(feature = "cso")]
@@ -11,9 +10,10 @@ use sqlx::sqlite::SqliteConnection;
 use std::path::PathBuf;
 #[cfg(feature = "ird")]
 use super::import_roms::import_system;
+use strum::VariantNames;
 
 pub fn subcommand() -> Command {
-    Command::new("import-all")
+    Command::new("import-all-systems")
         .about("Validate and import ROM files for all systems")
         .arg(
             Arg::new("ROMS")
@@ -30,7 +30,7 @@ pub fn subcommand() -> Command {
                 .help("Set the hash algorithm")
                 .required(false)
                 .num_args(1)
-                .value_parser(PossibleValuesParser::new(HASH_ALGORITHMS)),
+                .value_parser(PossibleValuesParser::new(HashAlgorithm::VARIANTS)),
         )
         .arg(
             Arg::new("NOTRASH")
